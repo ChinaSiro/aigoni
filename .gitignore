@@ -3,9 +3,9 @@
 .trellis/
 
 # 私人文件
-content/
-wiki/
-public/uploads
+/content/
+/wiki/
+/public/uploads
 .env
 config.yaml
 
