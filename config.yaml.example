@@ -1,0 +1,18 @@
+site:
+    name: Aigoni
+    description: A minimal Markdown publishing and private note system written in Go.
+    author: huo0
+    base_url: http://localhost:8080
+    logo: ""
+    author_avatar: ""
+    utc_offset: "+08:00"
+pagination:
+    posts_per_page: 10
+    home_posts_count: 5
+paths:
+    content_dir: content
+    posts_dir: content/posts
+    pages_dir: content/pages
+    notes_dir: content/notes
+    public_dir: public
+    uploads_dir: public/uploads

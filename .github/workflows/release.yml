@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build ${{ matrix.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            name: Aigoni-linux-amd64
+          - goos: linux
+            goarch: arm64
+            name: Aigoni-linux-arm64
+          - goos: darwin
+            goarch: amd64
+            name: Aigoni-darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            name: Aigoni-darwin-arm64
+          - goos: windows
+            goarch: amd64
+            name: Aigoni-windows-amd64.exe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        run: |
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=0 \
+          go build -trimpath -ldflags="-s -w" -o ${{ matrix.name }} ./cmd/Aigoni
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.name }}

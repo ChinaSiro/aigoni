@@ -1,0 +1,815 @@
+openapi: 3.1.0
+info:
+  title: Aigoni API
+  version: 1.0.0
+  description: |
+    Aigoni API contract. `x-implementation-status` marks routes registered now
+    implemented REST contract.
+servers:
+  - url: /
+tags:
+  - name: Public REST
+  - name: Machine API
+  - name: Admin API
+paths:
+  /rest/v1:
+    get:
+      tags: [Public REST]
+      summary: List public REST endpoints
+      x-implementation-status: implemented
+      responses:
+        '200':
+          description: Endpoint index
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIIndex'
+  /rest/v1/categories:
+    get:
+      tags: [Public REST]
+      summary: List published post categories
+      description: Includes a built-in uncategorized item whenever published posts exist.
+      x-implementation-status: implemented
+      responses:
+        '200':
+          description: Category list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryList'
+        '500':
+          $ref: '#/components/responses/Error'
+  /rest/v1/posts:
+    get:
+      tags: [Public REST]
+      summary: List published posts
+      x-implementation-status: implemented
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+        - name: category
+          in: query
+          schema: {type: string}
+          description: Exact category filter. Use __none__ for posts with an empty category. Implemented.
+        - name: tag
+          in: query
+          schema: {type: string}
+          description: Exact tag filter. Implemented.
+        - name: year
+          in: query
+          schema: {type: string, pattern: '^[0-9]{4}$'}
+          description: Four-digit year filter. Implemented.
+      responses:
+        '200':
+          description: Post page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicContentList'
+        '500':
+          $ref: '#/components/responses/Error'
+  /rest/v1/posts/{slug}:
+    get:
+      tags: [Public REST]
+      summary: Get a published post
+      x-implementation-status: implemented
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+      responses:
+        '200':
+          description: Post detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicContent'
+        '404':
+          $ref: '#/components/responses/Error'
+  /rest/v1/pages:
+    get:
+      tags: [Public REST]
+      summary: List published pages
+      x-implementation-status: implemented
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Page list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicContentList'
+  /rest/v1/pages/{slug}:
+    get:
+      tags: [Public REST]
+      summary: Get a published page
+      x-implementation-status: implemented
+      parameters:
+        - $ref: '#/components/parameters/Slug'
+      responses:
+        '200':
+          description: Page detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicContent'
+        '404':
+          $ref: '#/components/responses/Error'
+  /rest/v1/search:
+    get:
+      tags: [Public REST]
+      summary: Search published posts
+      x-implementation-status: implemented
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: {type: string, minLength: 1}
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PerPage'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicContentList'
+        '400':
+          $ref: '#/components/responses/Error'
+  /rest/v1/site:
+    get:
+      tags: [Public REST]
+      summary: Get public site configuration
+      x-implementation-status: implemented
+      responses:
+        '200':
+          description: Public site configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Site'
+  /rest/v1/tags:
+    get:
+      tags: [Public REST]
+      summary: List post tags
+      x-implementation-status: implemented
+      responses:
+        '200':
+          description: Tag list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryList'
+  /rest/v1/archives:
+    get:
+      tags: [Public REST]
+      summary: List post archives by year
+      x-implementation-status: implemented
+      responses:
+        '200':
+          description: Archive list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArchiveList'
+  /api/content:
+    post:
+      tags: [Machine API]
+      summary: Create a note, post, or page from full Markdown
+      description: "Content metadata comes from the YAML frontmatter in `body`. Uses `X-API-Key` or `Authorization: Bearer`; body limit is 2 MiB."
+      x-implementation-status: implemented
+      security: [{APIKeyHeader: []}, {BearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateContentRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MachineContentResponse'
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '502': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/Error'}
+  /api/admin/v1/session:
+    get:
+      $ref: '#/components/pathItems/SessionGet'
+    post:
+      $ref: '#/components/pathItems/SessionPost'
+    delete:
+      $ref: '#/components/pathItems/SessionDelete'
+  /api/admin/v1/dashboard:
+    get:
+      tags: [Admin API]
+      summary: Get dashboard counts and availability
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      responses:
+        '200':
+          description: Dashboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+  /api/admin/v1/posts:
+    get: {$ref: '#/components/pathItems/AdminContentCollection'}
+    post: {$ref: '#/components/pathItems/AdminContentCreate'}
+  /api/admin/v1/posts/{id}:
+    get: {$ref: '#/components/pathItems/AdminContentGet'}
+    patch: {$ref: '#/components/pathItems/AdminContentPatch'}
+    delete: {$ref: '#/components/pathItems/AdminContentDelete'}
+  /api/admin/v1/pages:
+    get: {$ref: '#/components/pathItems/AdminContentCollection'}
+    post: {$ref: '#/components/pathItems/AdminContentCreate'}
+  /api/admin/v1/pages/{id}:
+    get: {$ref: '#/components/pathItems/AdminContentGet'}
+    patch: {$ref: '#/components/pathItems/AdminContentPatch'}
+    delete: {$ref: '#/components/pathItems/AdminContentDelete'}
+  /api/admin/v1/notes:
+    get: {$ref: '#/components/pathItems/AdminContentCollection'}
+    post: {$ref: '#/components/pathItems/AdminContentCreate'}
+  /api/admin/v1/notes/{id}:
+    get: {$ref: '#/components/pathItems/AdminContentGet'}
+    patch: {$ref: '#/components/pathItems/AdminContentPatch'}
+    delete: {$ref: '#/components/pathItems/AdminContentDelete'}
+  /api/admin/v1/categories:
+    get:
+      tags: [Admin API]
+      summary: List post category candidates
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      responses:
+        '200':
+          description: Categories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryList'
+  /api/admin/v1/note-categories:
+    get:
+      tags: [Admin API]
+      summary: List note category candidates
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      responses:
+        '200':
+          description: Categories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryList'
+  /api/admin/v1/tags:
+    get:
+      tags: [Admin API]
+      summary: List post tag candidates
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      responses:
+        '200':
+          description: Tags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagList'
+  /api/admin/v1/note-tags:
+    get:
+      tags: [Admin API]
+      summary: List note tag candidates
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      responses:
+        '200':
+          description: Tags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagList'
+  /api/admin/v1/search:
+    get:
+      tags: [Admin API]
+      summary: Search posts, pages, and notes
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: {type: string, minLength: 1}
+        - name: type
+          in: query
+          schema: {type: string, enum: [post, page, note]}
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminContentList'
+  /api/admin/v1/drafts:
+    post:
+      $ref: '#/components/pathItems/DraftCreate'
+  /api/admin/v1/drafts/{token}/assets:
+    get: {$ref: '#/components/pathItems/AdminAssetList'}
+    post: {$ref: '#/components/pathItems/AdminAssetUpload'}
+  /api/admin/v1/drafts/{token}/assets/{name}:
+    delete: {$ref: '#/components/pathItems/AdminAssetDelete'}
+  /api/admin/v1/drafts/{token}/assets/cover:
+    put: {$ref: '#/components/pathItems/AdminCoverUpload'}
+    delete: {$ref: '#/components/pathItems/AdminCoverDelete'}
+  /api/admin/v1/{type}/{id}/assets:
+    get: {$ref: '#/components/pathItems/AdminAssetList'}
+    post: {$ref: '#/components/pathItems/AdminAssetUpload'}
+  /api/admin/v1/{type}/{id}/assets/{name}:
+    delete: {$ref: '#/components/pathItems/AdminAssetDelete'}
+  /api/admin/v1/{type}/{id}/assets/download:
+    post:
+      tags: [Admin API]
+      summary: Download remote image as a content asset
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RemoteAssetRequest'
+      responses:
+        '201':
+          description: Asset downloaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        '502': {$ref: '#/components/responses/Error'}
+  /api/admin/v1/{type}/{id}/assets/cover:
+    put: {$ref: '#/components/pathItems/AdminCoverUpload'}
+    delete: {$ref: '#/components/pathItems/AdminCoverDelete'}
+  /api/admin/v1/settings:
+    get:
+      tags: [Admin API]
+      summary: Get safe site settings
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      responses:
+        '200':
+          description: Settings without secrets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+    patch:
+      tags: [Admin API]
+      summary: Update site settings
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettingsPatch'
+      responses:
+        '200':
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Settings'
+        '422': {$ref: '#/components/responses/Error'}
+  /api/admin/v1/settings/assets/{kind}:
+    put: {$ref: '#/components/pathItems/SettingsAssetUpload'}
+    delete: {$ref: '#/components/pathItems/SettingsAssetDelete'}
+  /api/admin/v1/wiki/status:
+    get:
+      tags: [Admin API]
+      summary: Get Wiki configuration and note status counts
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      responses:
+        '200':
+          description: Wiki status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WikiStatus'
+  /api/admin/v1/wiki/chat:
+    post:
+      tags: [Admin API]
+      summary: Start one natural-language Wiki Agent run
+      description: Admin Wiki Chat and machine Wiki Ask share the `AIGONI_WIKI_AGENT_CONCURRENCY` active-run pool. Pending and running runs count toward the limit; exceeding it returns 409.
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WikiChatRequest'}
+      responses:
+        '202': {description: Agent run accepted, content: {application/json: {schema: {$ref: '#/components/schemas/WikiRun'}}}}
+        '409': {$ref: '#/components/responses/Error'}
+  /api/admin/v1/wiki/chat:stream:
+    post:
+      tags: [Admin API]
+      summary: Start one Wiki Agent run and stream its events
+      description: Response Content-Type is `text/event-stream`. Events are `step`, `tool`, `delta`, `done`, and `error`. The backend run is not tied to the SSE connection lifecycle. Admin Wiki Chat and machine Wiki Ask share the `AIGONI_WIKI_AGENT_CONCURRENCY` active-run pool.
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WikiChatRequest'}
+      responses:
+        '200': {description: SSE stream, content: {text/event-stream: {schema: {type: string}}}}
+        '409': {$ref: '#/components/responses/Error'}
+  /api/admin/v1/wiki/runs/{id}:
+    get:
+      tags: [Admin API]
+      summary: Get a Wiki Agent run
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      parameters: [{$ref: '#/components/parameters/ID'}]
+      responses:
+        '200': {description: Agent run, content: {application/json: {schema: {$ref: '#/components/schemas/WikiRun'}}}}
+        '404': {$ref: '#/components/responses/Error'}
+  /api/admin/v1/wiki/runs/{id}/cancel:
+    post:
+      tags: [Admin API]
+      summary: Cancel a running Wiki Agent run
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      parameters: [{$ref: '#/components/parameters/ID'}]
+      responses:
+        '200': {description: Agent run canceled, content: {application/json: {schema: {$ref: '#/components/schemas/WikiRun'}}}}
+        '404': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+  /api/admin/v1/wiki/runs/{id}/events:
+    get:
+      tags: [Admin API]
+      summary: Subscribe to Wiki Agent run events
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      parameters:
+        - $ref: '#/components/parameters/ID'
+        - {name: from, in: query, schema: {type: integer, minimum: 0}}
+      responses:
+        '200': {description: SSE stream, content: {text/event-stream: {schema: {type: string}}}}
+        '404': {$ref: '#/components/responses/Error'}
+  /api/admin/v1/wiki/ask:api:
+    post:
+      tags: [Machine API]
+      summary: Submit a read-only Wiki Ask question
+      description: "Authenticated with AIGONI_API_KEY via `X-API-Key` or `Authorization: Bearer`. No Session Cookie or CSRF. The read-only Wiki Agent exposes only glob/grep/read tools and can never write Wiki files. Disabled unless `AIGONI_WIKI_ASK_API_ENABLED=true`; submissions are capped per minute by `AIGONI_WIKI_ASK_API_RPM`. Admin Wiki Chat and machine Wiki Ask share the `AIGONI_WIKI_AGENT_CONCURRENCY` active-run pool; pending and running runs count toward the limit."
+      x-implementation-status: implemented
+      security: [{APIKeyHeader: []}, {BearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/WikiChatRequest'}
+      responses:
+        '202': {description: Ask run accepted, content: {application/json: {schema: {$ref: '#/components/schemas/WikiRun'}}}}
+        '400': {$ref: '#/components/responses/Error'}
+        '401': {$ref: '#/components/responses/Error'}
+        '403': {$ref: '#/components/responses/Error'}
+        '409': {$ref: '#/components/responses/Error'}
+        '429': {$ref: '#/components/responses/Error'}
+        '503': {$ref: '#/components/responses/Error'}
+  /api/admin/v1/wiki/ask/runs/{id}:
+    get:
+      tags: [Machine API]
+      summary: Get a read-only Wiki Ask run
+      description: Only `ask` kind runs are visible; write-capable browser-admin chat runs are never exposed here. Polling is API-key protected, does not require the enable switch, and does not consume the submit per-minute quota.
+      x-implementation-status: implemented
+      security: [{APIKeyHeader: []}, {BearerAuth: []}]
+      parameters: [{$ref: '#/components/parameters/ID'}]
+      responses:
+        '200': {description: Ask run, content: {application/json: {schema: {$ref: '#/components/schemas/WikiRun'}}}}
+        '404': {$ref: '#/components/responses/Error'}
+  /api/admin/v1/wiki/documents:
+    get:
+      tags: [Admin API]
+      summary: List Wiki and note documents
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      responses:
+        '200':
+          description: Documents
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: {$ref: '#/components/schemas/WikiDocument'}
+  /api/admin/v1/wiki/documents/content:
+    get:
+      tags: [Admin API]
+      summary: Read and render one allowed Wiki or note document
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Document
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WikiDocument'}
+        '404': {$ref: '#/components/responses/Error'}
+  /api/admin/v1/wiki/render:
+    post:
+      tags: [Admin API]
+      summary: Render Markdown for Wiki preview
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [markdown]
+              properties: {markdown: {type: string}}
+      responses:
+        '200':
+          description: Rendered HTML
+          content:
+            application/json:
+              schema: {type: object, properties: {html: {type: string}}}
+  /api/admin/v1/wiki/backups:
+    delete:
+      tags: [Admin API]
+      summary: Delete Wiki backup files
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      responses:
+        '200':
+          description: Deleted backup count
+          content:
+            application/json:
+              schema: {type: object, properties: {removed: {type: integer}, message: {type: string}}}
+components:
+  securitySchemes:
+    AdminSession:
+      type: apiKey
+      in: cookie
+      name: aigoni_session
+      description: HttpOnly, SameSite=Lax; Secure over HTTPS.
+    CSRFToken:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: Required on Admin write operations in the target contract.
+    APIKeyHeader: {type: apiKey, in: header, name: X-API-Key}
+    BearerAuth: {type: http, scheme: bearer}
+  parameters:
+    Page: {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+    PerPage: {name: per_page, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 10}}
+    AdminPerPage: {name: per_page, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+    Slug: {name: slug, in: path, required: true, schema: {type: string}}
+    Name: {name: name, in: path, required: true, schema: {type: string}}
+    Year: {name: year, in: path, required: true, schema: {type: string, pattern: '^[0-9]{4}$'}}
+    ID: {name: id, in: path, required: true, schema: {type: string}}
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/ErrorResponse'}
+  pathItems:
+    SessionGet:
+      tags: [Admin API]
+      summary: Get current browser session
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      responses:
+        '200': {description: Session state, content: {application/json: {schema: {$ref: '#/components/schemas/Session'}}}}
+        '401': {$ref: '#/components/responses/Error'}
+    SessionPost:
+      tags: [Admin API]
+      summary: Sign in and set session cookie
+      x-implementation-status: implemented
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/LoginRequest'}}}}
+      responses:
+        '200': {description: Signed in; sets `aigoni_session` cookie, content: {application/json: {schema: {$ref: '#/components/schemas/Session'}}}}
+        '401': {$ref: '#/components/responses/Error'}
+    SessionDelete:
+      tags: [Admin API]
+      summary: End current session
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      responses: {'204': {description: Session deleted}, '401': {$ref: '#/components/responses/Error'}}
+    AdminContentCollection:
+      tags: [Admin API]
+      summary: List private content by collection type
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/AdminPerPage'
+        - {name: publish, in: query, schema: {type: boolean}}
+        - {name: category, in: query, schema: {type: string}}
+        - {name: tag, in: query, schema: {type: string}}
+      responses: {'200': {description: Content page, content: {application/json: {schema: {$ref: '#/components/schemas/AdminContentList'}}}}}
+    AdminContentCreate:
+      tags: [Admin API]
+      summary: Create content
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AdminContentInput'}}}}
+      responses:
+        '201': {description: Created, headers: {Location: {schema: {type: string}}}, content: {application/json: {schema: {$ref: '#/components/schemas/AdminContent'}}}}
+        '409': {$ref: '#/components/responses/Error'}
+        '422': {$ref: '#/components/responses/Error'}
+    AdminContentGet:
+      tags: [Admin API]
+      summary: Get private content
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      parameters: [{$ref: '#/components/parameters/ID'}]
+      responses: {'200': {description: Content detail, content: {application/json: {schema: {$ref: '#/components/schemas/AdminContent'}}}}, '404': {$ref: '#/components/responses/Error'}}
+    AdminContentPatch:
+      tags: [Admin API]
+      summary: Update private content with revision protection
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      parameters:
+        - $ref: '#/components/parameters/ID'
+        - {name: If-Match, in: header, schema: {type: string}, description: Revision validator; alternatively provide revision in the body.}
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/AdminContentInput'}}}}
+      responses: {'200': {description: Saved content, content: {application/json: {schema: {$ref: '#/components/schemas/AdminContent'}}}}, '409': {$ref: '#/components/responses/Error'}}
+    AdminContentDelete:
+      tags: [Admin API]
+      summary: Delete private content
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      parameters: [{$ref: '#/components/parameters/ID'}]
+      responses: {'204': {description: Deleted}, '404': {$ref: '#/components/responses/Error'}}
+    DraftCreate:
+      tags: [Admin API]
+      summary: Create a temporary content asset area
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      responses: {'201': {description: Draft created, content: {application/json: {schema: {$ref: '#/components/schemas/Draft'}}}}}
+    AdminAssetList:
+      tags: [Admin API]
+      summary: List content assets
+      x-implementation-status: implemented
+      security: [{AdminSession: []}]
+      responses:
+        '200':
+          description: Asset list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: {type: array, items: {$ref: '#/components/schemas/Asset'}}
+                  cover: {nullable: true, $ref: '#/components/schemas/Asset'}
+    AdminAssetUpload:
+      tags: [Admin API]
+      summary: Upload a content asset
+      description: Multipart upload. The server accepts only allowlisted file extensions and limits one file to 20 MiB.
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      requestBody: {required: true, content: {multipart/form-data: {schema: {type: object, required: [asset], properties: {asset: {type: string, format: binary}}}}}}
+      responses: {'201': {description: Uploaded asset, content: {application/json: {schema: {$ref: '#/components/schemas/Asset'}}}}, '413': {$ref: '#/components/responses/Error'}, '422': {$ref: '#/components/responses/Error'}}
+    AdminAssetDelete:
+      tags: [Admin API]
+      summary: Delete a content asset
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      responses: {'204': {description: Deleted}}
+    AdminCoverUpload:
+      tags: [Admin API]
+      summary: Upload a cover, logo, or avatar
+      description: Multipart upload uses `cover` for content covers and `asset` for settings assets; 20 MiB maximum.
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      requestBody: {required: true, content: {multipart/form-data: {schema: {type: object, properties: {cover: {type: string, format: binary}, asset: {type: string, format: binary}}}}}}
+      responses: {'200': {description: Uploaded file, content: {application/json: {schema: {$ref: '#/components/schemas/Asset'}}}}, '413': {$ref: '#/components/responses/Error'}}
+    AdminCoverDelete:
+      tags: [Admin API]
+      summary: Delete a cover, logo, or avatar
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      responses: {'204': {description: Deleted}}
+    SettingsAssetUpload:
+      tags: [Admin API]
+      summary: Upload the site logo or avatar
+      description: Multipart upload of the `asset` file; replaces the previous file of the same kind.
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      requestBody: {required: true, content: {multipart/form-data: {schema: {type: object, required: [asset], properties: {asset: {type: string, format: binary}}}}}}
+      responses:
+        '201': {description: Uploaded settings asset, content: {application/json: {schema: {$ref: '#/components/schemas/SettingsAsset'}}}}
+    SettingsAssetDelete:
+      tags: [Admin API]
+      summary: Delete the site logo or avatar
+      x-implementation-status: implemented
+      security: [{AdminSession: [], CSRFToken: []}]
+      responses:
+        '200': {description: Deleted, content: {application/json: {schema: {type: object, properties: {kind: {type: string}, deleted: {type: boolean}}}}}}
+  schemas:
+    APIIndex: {type: object, required: [version, endpoints], properties: {version: {type: string, example: v1}, endpoints: {type: array, items: {type: string}}}}
+    PublicContent:
+      type: object
+      required: [title, description, date, lastmod, slug, tags, url]
+      properties:
+        title: {type: string}
+        description: {type: string}
+        date: {type: string, format: date-time}
+        lastmod: {type: string, format: date-time}
+        slug: {type: string}
+        category: {type: string}
+        tags: {type: array, items: {type: string}}
+        cover_image: {type: string}
+        toc: {type: boolean}
+        body: {type: string, description: Present in detail responses.}
+        html: {type: string, description: Present in detail responses.}
+        excerpt: {type: string, description: Present in search results.}
+        url: {type: string}
+    PublicContentList: {type: object, required: [items, page, per_page, total, total_pages], properties: {items: {type: array, items: {$ref: '#/components/schemas/PublicContent'}}, page: {type: integer}, per_page: {type: integer}, total: {type: integer}, total_pages: {type: integer}}}
+    Category: {type: object, required: [name, count, url], properties: {name: {type: string}, count: {type: integer}, url: {type: string}, none: {type: boolean, description: Present only on the built-in uncategorized item.}}}
+    CategoryList: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/Category'}}, total: {type: integer}}}
+    Tag: {type: object, required: [name, count], properties: {name: {type: string}, count: {type: integer}}}
+    TagList: {type: array, items: {$ref: '#/components/schemas/Tag'}}
+    Archive: {type: object, required: [year, count, url], properties: {year: {type: string, pattern: '^[0-9]{4}$'}, count: {type: integer}, url: {type: string}}}
+    ArchiveList: {type: object, required: [items, total], properties: {items: {type: array, items: {$ref: '#/components/schemas/Archive'}}, total: {type: integer}}}
+    Site: {type: object, properties: {name: {type: string}, description: {type: string}, author: {type: string}, base_url: {type: string, format: uri}, logo: {type: string}, avatar: {type: string}, utc_offset: {type: string}, home_posts_count: {type: integer}, nav: {type: array, items: {type: object}}, features: {type: object}}}
+    CreateContentRequest: {type: object, required: [type, body], properties: {type: {type: string, enum: [note, post, page]}, body: {type: string, description: Full Markdown document with YAML frontmatter. date/lastmod accept YYYY-MM-DD, YYYY-MM-DD HH:MM, YYYY-MM-DD HH:MM:SS, or RFC3339.}, sync_images: {type: boolean, default: false}, publish: {type: boolean, description: Optional. Overrides or supplies frontmatter publish for post/page; note rejects it.}}}
+    MachineContentResponse: {type: object, required: [id, path, title, date, synced_images], properties: {id: {type: string}, path: {type: string}, title: {type: string}, date: {type: string, format: date-time}, slug: {type: string}, publish: {type: boolean, description: Present for post and page responses}, toc: {type: boolean, description: Present for post and page responses}, synced_images: {type: integer}}}
+    LoginRequest: {type: object, required: [password], properties: {password: {type: string, format: password}}}
+    Session: {type: object, required: [authenticated, expires_at, capabilities, csrf_token], properties: {authenticated: {type: boolean}, expires_at: {type: string, format: date-time}, capabilities: {type: array, items: {type: string}, example: [admin]}, csrf_token: {type: string}}}
+    Dashboard:
+      type: object
+      properties:
+        posts: {$ref: '#/components/schemas/ContentCount'}
+        pages: {$ref: '#/components/schemas/ContentCount'}
+        notes: {type: integer}
+        features: {type: object, additionalProperties: {type: boolean}}
+    ContentCount: {type: object, required: [total, published, draft], properties: {total: {type: integer}, published: {type: integer}, draft: {type: integer}}}
+    AdminContentInput: {type: object, properties: {title: {type: string}, description: {type: string}, date: {type: string, format: date-time}, publish: {type: boolean}, slug: {type: string}, category: {type: string}, tags: {type: array, items: {type: string}}, cover_image: {type: string}, toc: {type: boolean}, template: {type: string}, source_url: {type: string, format: uri}, weight: {type: integer}, body: {type: string}, revision: {type: string}, draft_token: {type: string}}}
+    AdminContent: {allOf: [{$ref: '#/components/schemas/AdminContentInput'}, {type: object, required: [id, path, type, revision], properties: {id: {type: string}, path: {type: string}, type: {type: string, enum: [post, page, note]}, html: {type: string}, saved_at: {type: string, format: date-time}, edit_url: {type: string}, asset_prefix: {type: string}}}]}
+    AdminContentList: {type: object, required: [items, page, per_page, total, total_pages], properties: {items: {type: array, items: {$ref: '#/components/schemas/AdminContent'}}, page: {type: integer}, per_page: {type: integer}, total: {type: integer}, total_pages: {type: integer}}}
+    Draft: {type: object, required: [token, asset_prefix, cleanup], properties: {token: {type: string}, expires_at: {type: string, format: date-time}, asset_prefix: {type: string}, cleanup: {type: string, description: Draft assets are moved when committed; abandoned draft asset directories older than 7 days are cleaned automatically.}}}
+    Asset: {type: object, required: [name, path], properties: {name: {type: string}, path: {type: string}, markdown: {type: string}, is_image: {type: boolean}, is_cover: {type: boolean}, size: {type: integer}}}
+    RemoteAssetRequest: {type: object, required: [url], properties: {url: {type: string, format: uri}, name: {type: string}}}
+    SettingsAsset: {type: object, required: [kind, name, path, url], properties: {kind: {type: string, enum: [logo, avatar]}, name: {type: string}, path: {type: string}, url: {type: string}}}
+    Settings:
+      type: object
+      properties:
+        site:
+          type: object
+          properties: {name: {type: string}, description: {type: string}, author: {type: string}, base_url: {type: string, format: uri}, logo: {type: string}, author_avatar: {type: string}, utc_offset: {type: string}}
+        pagination:
+          type: object
+          properties: {posts_per_page: {type: integer}, home_posts_count: {type: integer}}
+        paths:
+          type: object
+          properties: {content_dir: {type: string}, posts_dir: {type: string}, pages_dir: {type: string}, notes_dir: {type: string}, public_dir: {type: string}, uploads_dir: {type: string}}
+        uploads:
+          type: object
+          properties: {allowed_extensions: {type: array, items: {type: string}}, max_bytes: {type: integer}, site_asset_path: {type: string}}
+        updated_at: {type: string, format: date-time}
+    SettingsPatch:
+      type: object
+      properties:
+        site:
+          type: object
+          properties: {name: {type: string}, description: {type: string}, author: {type: string}, base_url: {type: string, format: uri}, logo: {type: string}, author_avatar: {type: string}, utc_offset: {type: string}}
+        pagination:
+          type: object
+          properties: {posts_per_page: {type: integer}, home_posts_count: {type: integer}}
+        paths:
+          type: object
+          properties: {content_dir: {type: string}, posts_dir: {type: string}, pages_dir: {type: string}, notes_dir: {type: string}, public_dir: {type: string}, uploads_dir: {type: string}}
+    WikiStatus: {type: object, properties: {ready: {type: boolean}}}
+    WikiRun: {type: object, required: [id, kind, status], properties: {id: {type: string}, kind: {type: string}, status: {type: string, enum: [pending, running, completed, failed]}, message: {type: string}, question: {type: string}, answer: {type: string}, answer_html: {type: string}, reasoning: {type: string}, sources: {type: array, items: {type: string}}, files: {type: array, items: {type: string}}, events: {type: array, items: {$ref: '#/components/schemas/WikiRunEvent'}}, error: {type: string}, created_at: {type: string, format: date-time}, updated_at: {type: string, format: date-time}}}
+    WikiRunEvent: {type: object, required: [seq, event, payload], properties: {seq: {type: integer}, time: {type: string, format: date-time}, event: {type: string}, payload: {type: object}}}
+    WikiChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message: {type: string}
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              role: {type: string, enum: [user, assistant]}
+              content: {type: string}
+    WikiDocument: {type: object, required: [path], properties: {path: {type: string}, content: {type: string}, html: {type: string}, meta: {type: object}}}
+    ErrorResponse: {type: object, required: [error], properties: {error: {oneOf: [{type: string}, {$ref: '#/components/schemas/ErrorDetail'}]}}}
+    ErrorDetail: {type: object, required: [code, message], properties: {code: {type: string}, message: {type: string}, field_errors: {type: object, additionalProperties: {type: string}}, request_id: {type: string}}}

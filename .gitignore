@@ -1,0 +1,18 @@
+# Ai产物
+.claude/
+.trellis/
+
+# 私人文件
+content/
+wiki/
+public/uploads
+.env
+config.yaml
+
+# 编译产物
+/Aigoni
+/aigoni
+
+# 其余杂项
+*.log
+.DS_Store

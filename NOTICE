@@ -1,0 +1,12 @@
+Aigoni
+
+This project is released under the MIT License.
+
+Third-party dependencies keep their own licenses. Major dependencies include:
+
+- CloudWeGo Eino: Apache License 2.0
+- goldmark: MIT License
+- bluemonday: BSD-3-Clause License
+- yaml.v3: Apache License 2.0 / MIT style license notices as distributed upstream
+
+See go.mod and go.sum for the full dependency list.
