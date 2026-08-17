@@ -5,7 +5,7 @@
 <h1 align="center">Aigoni</h1>
 
 <p align="center">
-  Aigoni 是博客，也是你和LLM共同成长的Wiki知识库。
+  Aigoni 是博客，也是你和AI共同成长的Wiki知识库。
 </p>
 
 <p align="center">
@@ -26,7 +26,7 @@
 
 ## 为什么是 Aigoni
 
-Aigoni 把「博客」和「LLM知识库」放在一个“本地MD文件”的系统里：
+Aigoni 把「博客」和「LLM Wiki知识库」放在一个“本地MD文件”的系统里：
 
 - 个人笔记：可以将任何知识内容放入笔记中。
 - 网页收藏：将任何网页内容通过API存入笔记。
@@ -114,15 +114,6 @@ Aigoni的默认前端界面就是通过REST API进行开发的，你可以基于
 
 - 将`二进制文件` + `.env` 上传至服务器
 - 完成运行
-
-### 发布二进制
-
-仓库推送 `v*` 标签时，GitHub Actions 会自动编译 Linux、macOS、Windows 二进制并上传到 Release。
-
-```sh
-git tag v0.1.0
-git push origin v0.1.0
-```
 
 ### 二次开发
 
@@ -236,7 +227,7 @@ Aigoni 的 LLM Wiki 完全基于 karpathy/LLM Wiki，通过 Agent 实现无数�
 欢迎通过 Issue 或 Pull Request 改进 Aigoni。提交前建议：
 
 1. 保持 Go 代码符合 Google Go Style。
-2. 使用中文交流沟通，保持简洁清晰。
+2. 使用中文交流沟通即可，保持简洁清晰。
 
 ## 致谢
 
@@ -253,4 +244,4 @@ Aigoni 使用 [MIT License](./LICENSE) 发布。
 
 ## 联系作者
 
-请使用中文沟通 `chinasiro@gmail.com`
+请使用中文沟通即可 `chinasiro@gmail.com`
